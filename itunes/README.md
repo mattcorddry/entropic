@@ -9,7 +9,7 @@ How to use this script:
 1. Requires Mac::iTunes::Library and URI::Encode. On a mac, open terminal and execute:
 ```
   cpan
-  _answer questions if this is the first time using CPAN_
+  # answer questions if this is the first time using CPAN #
   cpan> install Mac::iTunes::Library
   cpan> install URI::Encode
   cpan> exit
