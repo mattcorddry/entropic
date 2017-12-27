@@ -23,4 +23,4 @@ How to use this script:
 
 * Run the script, specifying the output directory:
 
-`./itunes-playlist-export --export=~/Music/Export`
+`./itunes-playlist-export.pl --export=~/Music/Export`
