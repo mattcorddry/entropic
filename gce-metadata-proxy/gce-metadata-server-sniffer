@@ -1,0 +1,153 @@
+#!/usr/bin/perl
+#
+# tcp proxy to find GCE metadata server legacy API access
+# and the process which originates the connection.
+#
+
+use strict;
+use warnings;
+use IO::Socket::INET;
+
+#
+# settings
+#
+my $md_ip = "169.254.169.254";  # IP of metadata server
+my $md_port = 8040;               # TCP port of metadata server
+my $listen_ip = "0.0.0.0";      # IP of listener
+my $listen_port = 8040;         # TCP port of listener
+my $debug = 0;                  # 0=quiet; 1=normal; 2=debug
+
+$| = 1;                         # auto flush
+$SIG{'CHLD'} = 'IGNORE';        # no zombies
+
+#
+# find a process given a src port and address
+#
+sub find_process {
+    my $addr = shift;
+    my $port = shift;
+    my $cmdline;
+
+    my $lsof_cmd = "lsof -Fp -i TCP\@$addr:$port";
+    open (my $lsof_fd, "$lsof_cmd |")
+        or die "Could not run $lsof_cmd: $!\n";
+
+    my $pid;
+    while (my $buf = <$lsof_fd>) {
+        print "$$ lsof: $buf" if $debug > 1;
+        # we're depending on the first lsof entry that is not me is the
+        # client connection; it's a hack but seems to work.
+        if ($buf =~ /^p(\d+)$/) {
+            my $p = $1;
+            next if $p == $$;
+            $pid = $1;
+            last;
+        }
+    }
+    close $lsof_fd;
+
+    if ($pid) {
+        my $ps_cmd = "ps -o cmd -h $pid";
+        open (my $ps_fd, "$ps_cmd |")
+            or die "Could not run $ps_cmd: $!\n";
+        $cmdline = <$ps_fd>;
+        chomp $cmdline;
+        close $ps_fd;
+
+        print "[$$] Found PID $pid CMD $cmdline\n" if $debug;
+    }
+
+    return $cmdline;
+}
+
+# warn if not root
+warn "Warning: Not running as root, might not be able to determine offending clients.\n"
+    unless ($> == 0);
+
+# create listening socket
+my $s_socket = new IO::Socket::INET (
+    LocalHost => $listen_ip,
+    LocalPort => $listen_port,
+    Proto => 'tcp',
+    Listen => 5,
+    Reuse => 1
+);
+die "cannot create server socket $!\n" unless $s_socket;
+print "[$$] server waiting for client connection on $listen_ip : $listen_port\n" if $debug;
+
+# wait for connections
+while (my $c_socket = $s_socket->accept()) {
+
+	# now fork a new process to handle this client
+	my $pid;
+	while (not defined ($pid = fork())) {
+		sleep 5;
+	}
+
+	if ($pid) {
+		# parent process - close and go back to waiting
+		close $c_socket;
+
+	} else {
+        #
+		# the child processes handle socket IO. our first fork will handle TX
+        # to the MD server, then we'll fork again for the RX pass through IO.
+        #
+		close $s_socket;
+		my $c_addr = $c_socket->peerhost();
+		my $c_port = $c_socket->peerport();
+		print "[$$] connection from $c_addr : $c_port\n" if $debug;
+
+		my $md_socket = new IO::Socket::INET (
+			PeerHost => $md_ip,
+			PeerPort => $md_port,
+			Proto => 'tcp',);
+
+		die "cannot connect to the metadata server $!\n" unless $md_socket;
+		print "[$$] connected to the metadata server\n" if $debug;
+
+		# now fork a reader for the return IO
+		if (my $r_pid = fork()) {
+            #
+			# this process handles writes to md server from client and sniffing
+            # for legacy endpoints, logging cases where we have one.
+            #
+			my $tx_buf;
+			my $cmd;
+			while ($tx_buf = $c_socket->getline) {
+				$md_socket->send($tx_buf);
+                print "$$ tx: $tx_buf" if $debug > 1;
+				if ($tx_buf =~ /v1beta1|0\.1\/meta-data/) {
+                    print "[$$] legacy MD access from $c_addr:$c_port\n" if $debug;
+					$cmd = find_process($c_addr, $c_port);
+				}
+			}
+			if ($cmd) {
+				print "Legacy metadata access by $cmd\n";
+            }
+            close $c_socket;
+            close $md_socket;
+            print "[$$] Done with TX\n" if $debug;
+
+		} else {
+            #
+			# this process handles reads from md server and writes back to
+            # the client.
+            #
+			my $rx_buf;
+			while ($rx_buf = $md_socket->getline) {
+				$c_socket->send($rx_buf);
+                print "$$ rx: $rx_buf" if $debug > 1;
+			}
+            close $c_socket;
+            close $md_socket;
+            print "[$$] Done with RX\n" if $debug;
+            exit;
+
+		}
+        exit;
+	}
+
+}
+
+close $s_socket;
