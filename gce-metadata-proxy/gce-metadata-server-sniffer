@@ -16,6 +16,7 @@ my $md_port = 8040;               # TCP port of metadata server
 my $listen_ip = "0.0.0.0";      # IP of listener
 my $listen_port = 8040;         # TCP port of listener
 my $debug = 0;                  # 0=quiet; 1=normal; 2=debug
+my $name = "gce-metadata-server-sniffer"; # required to filter TCP conns
 
 $| = 1;                         # auto flush
 $SIG{'CHLD'} = 'IGNORE';        # no zombies
@@ -35,30 +36,33 @@ sub find_process {
     my $pid;
     while (my $buf = <$lsof_fd>) {
         print "$$ lsof: $buf" if $debug > 1;
-        # we're depending on the first lsof entry that is not me is the
-        # client connection; it's a hack but seems to work.
+        # find the process that is not $name
         if ($buf =~ /^p(\d+)$/) {
             my $p = $1;
-            next if $p == $$;
-            $pid = $1;
+            my $ps_cmd = "ps -o cmd -h $p";
+            open (my $ps_fd, "$ps_cmd |")
+                or die "Could not run $ps_cmd: $!\n";
+            my $c = <$ps_fd>;
+            chomp $c;
+            close $ps_fd;
+            next if ($c =~ /$name/);
+            $cmdline = $c;
             last;
         }
     }
     close $lsof_fd;
 
-    if ($pid) {
-        my $ps_cmd = "ps -o cmd -h $pid";
-        open (my $ps_fd, "$ps_cmd |")
-            or die "Could not run $ps_cmd: $!\n";
-        $cmdline = <$ps_fd>;
-        chomp $cmdline;
-        close $ps_fd;
-
+    if ($cmdline) {
         print "[$$] Found PID $pid CMD $cmdline\n" if $debug;
+        return $cmdline;
+    } else {
+        warn "[$$] Warning: Connection from $addr:$port did not match a command\n";
     }
 
-    return $cmdline;
+    return;
 }
+
+print "GCE Metadata Server Traffic Sniffer\n\n";
 
 # warn if not root
 warn "Warning: Not running as root, might not be able to determine offending clients.\n"
@@ -123,7 +127,7 @@ while (my $c_socket = $s_socket->accept()) {
 				}
 			}
 			if ($cmd) {
-				print "Legacy metadata access by $cmd\n";
+				print localtime . ": Legacy metadata access '$cmd'\n";
             }
             close $c_socket;
             close $md_socket;
