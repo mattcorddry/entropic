@@ -43,10 +43,13 @@ sub find_process {
             open (my $ps_fd, "$ps_cmd |")
                 or die "Could not run $ps_cmd: $!\n";
             my $c = <$ps_fd>;
+            print "$$ ps: $c" if $debug > 1;
             chomp $c;
             close $ps_fd;
+            next unless $c;
             next if ($c =~ /$name/);
             $cmdline = $c;
+            $pid = $p;
             last;
         }
     }
@@ -56,7 +59,7 @@ sub find_process {
         print "[$$] Found PID $pid CMD $cmdline\n" if $debug;
         return $cmdline;
     } else {
-        warn "[$$] Warning: Connection from $addr:$port did not match a command\n";
+        print "[$$] Warning: Connection from $addr:$port did not match a command\n" if $debug;
     }
 
     return;
