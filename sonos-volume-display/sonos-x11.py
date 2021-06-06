@@ -47,6 +47,9 @@ class ImageShow():
         self.backlight_high = "~/pitft22-backlight high"
         self.backlight_off = "~/pitft22-backlight off"
 
+        # default sonos to control if not specified as ARGV[1]
+        selected_device = 'Living Room'
+
         #
         # END SETTINGS
         #
@@ -75,7 +78,6 @@ class ImageShow():
         self.root.geometry("%dx%d+0+0" % (self.img_width, self.img_height))
 
         # which Sonos should we control?
-        selected_device = 'Living Room' # default sonos to control
         if len(sys.argv) > 1:
             selected_device = sys.argv[1]
 
