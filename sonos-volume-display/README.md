@@ -7,6 +7,8 @@ rudimentary backlight control so that the screen doesn't remain lit at all times
 However, it should work on anything which supports Python Tk based displays, and is
 capable of running in a window for desktop use.
 
+![Image showing the Raspberry Pi project](https://raw.githubusercontent.com/mattcorddry/entropic/master/sonos-volume-display/SonosPi.jpg)
+
 ## Installation
 Simple installation instructions. Assumes you know what you're doing :)
 
