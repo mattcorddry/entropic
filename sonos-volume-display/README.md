@@ -15,9 +15,9 @@ Simple installation instructions. Assumes you know what you're doing :)
  online and replaced `chromium` with `sonos-x11.py` in the `.xinitrc` file.
  3. Install prerequisites:
  
- 	sudo apt install python3 python3-pip python3-tk
- 	pip3 install SoCo
- 	pip3 install Pillow
+ 		sudo apt install python3 python3-pip python3-tk
+ 		pip3 install SoCo
+ 		pip3 install Pillow
  	
  4. Download `sonos-x11.py` to your home directory on the machine, make sure it's set as
  executable, such as `chmod 0755 ~/sonos-x11.py`.
