@@ -20,7 +20,11 @@ Simple installation instructions. Assumes you know what you're doing :)
  		pip3 install Pillow
  	
  4. Download `sonos-x11.py` to your home directory on the machine, make sure it's set as
- executable, such as `chmod 0755 ~/sonos-x11.py`.
+ executable:
+ 
+ 		wget -nd 'https://raw.githubusercontent.com/mattcorddry/entropic/master/sonos-volume-display/sonos-x11.py'
+ 		chmod 0755 ./sonos-x11.py
+ 
  5. If you would like backlight control, create or adapt a script to do this. The script
  should take backlight levels `(low | medium | high | off)` as the only argument. I've
  supplied `pitft22-backlight` as an example, which controls the 
