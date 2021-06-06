@@ -13,13 +13,20 @@ Simple installation instructions. Assumes you know what you're doing :)
  1. Setup a simple Linux machine, such as a Raspberry Pi without X11.
  2. Setup the machine in *X11 kiosk* mode. I followed [this guide](https://blog.r0b.io/post/minimal-rpi-kiosk/)
  online and replaced `chromium` with `sonos-x11.py` in the `.xinitrc` file.
- 3. Download `sonos-x11.py` to your home directory on the machine, make sure it's set as
+ 3. Install prerequisites:
+ 
+ 	sudo apt install python3 python3-pip python3-tk
+ 	pip3 install SoCo
+ 	pip3 install Pillow
+ 	
+ 4. Download `sonos-x11.py` to your home directory on the machine, make sure it's set as
  executable, such as `chmod 0755 ~/sonos-x11.py`.
- 4. If you would like backlight control, create or adapt a script to do this. The script
+ 5. If you would like backlight control, create or adapt a script to do this. The script
  should take backlight levels `(low | medium | high | off)` as the only argument. I've
  supplied `pitft22-backlight` as an example, which controls the 
  [Adafruit PiTFT 2.2 LCD](https://learn.adafruit.com/adafruit-2-2-pitft-hat-320-240-primary-display-for-raspberry-pi).
- 5. Edit `sonos-x11.py` where you will find settings around line 30.
+ 6. Edit `sonos-x11.py` where you will find settings around line 30.
+ 7. Reboot and see if it works :) syslog can be a helpful debug tool.
  
 ## Examples
 
