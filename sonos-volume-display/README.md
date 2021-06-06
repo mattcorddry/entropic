@@ -24,6 +24,7 @@ Simple installation instructions. Assumes you know what you're doing :)
 ## Examples
 
 **.xinitrc**
+
 	#!/usr/bin/env sh
 	xset -dpms
 	xset s off
@@ -39,6 +40,7 @@ Simple installation instructions. Assumes you know what you're doing :)
 	fi
 
 **.bash_profile**
+
 	# only run startx on local terminal
 	if [ -z $DISPLAY ] && [ $(tty) = /dev/tty1 ]; then
 		startx
@@ -49,9 +51,11 @@ Simple installation instructions. Assumes you know what you're doing :)
 This is a simple parts list for my Raspberry Pi based volume display. YMMV.
 
  * [Raspberry Pi 3B+](https://www.amazon.com/CanaKit-Raspberry-Power-Supply-Listed/dp/B07BC6WH7V/)
- * [Zebra Bold Case](https://www.amazon.com/gp/product/B00UFEBYNS) _Requires some modifications_
- * [Adafruit PiTFT 2.2 LCD](https://www.amazon.com/gp/product/B00S7GAVEO/) _Requires soldering_
- * SD card of your choice for the Root filesystem. Doesn't need much space.
+ * [Zebra Bold Case](https://www.amazon.com/gp/product/B00UFEBYNS) _Requires some
+modifications to fit the PiTFT screen below_
+ * [Adafruit PiTFT 2.2 LCD](https://www.amazon.com/gp/product/B00S7GAVEO/) _Requires
+ soldering of the 40-pin connector_
+ * SD card of your choice for the root filesystem. Doesn't need much space.
  * To stand this up on a tabletop, I used:
    * [Angled MicroSD power cable](https://www.amazon.com/gp/product/B00ENZDFQ4/)
    * 10W+ USB-A power adapter
