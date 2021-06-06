@@ -1,0 +1,42 @@
+#!/bin/bash
+#
+# control the Adafruit PiTFT 2.2 backlight
+# per https://learn.adafruit.com/adafruit-2-2-pitft-hat-320-240-primary-display-for-raspberry-pi/backlight-control
+#
+
+# requires `apt-get install wiringpi` to provide gpio tool
+[ -x /usr/bin/gpio ] || exit 1
+
+LEVEL="$1"
+if [ -z "$LEVEL" ] ; then
+    echo "Usage: $0 [off | low | medium | high]"
+    exit 1
+fi
+
+# setup pin 18 as PWM
+/usr/bin/gpio -g mode 18 pwm
+
+case "$LEVEL" in
+    off)
+        gpio -g pwm 18 0
+        ;;
+
+    low)
+        gpio -g pwm 18 100
+        ;;
+
+    medium)
+        gpio -g pwm 18 400
+        ;;
+
+    high)
+        gpio -g pwm 18 1000
+        ;;
+
+    *)
+        echo "Usage: $0 [off | low | medium | high]"
+        exit 1
+        ;;
+esac
+
+exit 0
