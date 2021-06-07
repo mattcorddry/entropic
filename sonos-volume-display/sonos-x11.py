@@ -9,6 +9,10 @@
 #
 # matt@corddry.com | 2021-05
 #
+# TODO LIST:
+# - convert to using Sonos events rather than polling
+# - better support for windowed desktop mode
+# 
 
 import soco
 import tkinter as tk
@@ -34,14 +38,19 @@ class ImageShow():
         # override window size and use full screen
         self.fullscreen = 1
 
+        # tune the UI for a small screen
+        self.smallscreen = 1
+
         # delay between refreshes in msec
-        self.delay_active = 250
-        self.delay_idle = 1000
+        # (may need to be increased for older Sonos devices)
+        self.delay_active = 500
+        self.delay_idle = 2000
         self.delay = self.delay_active
 
         # backlight control (if desired)
-        self.do_backlight = 1 # enable
-        self.backlight_off_time = 300 # seconds
+        self.do_backlight = 1           # enable
+        self.backlight_off_time = 300   # seconds before backlight disabled
+
         # path to command to set backlight at various levels
         self.backlight_low = "~/pitft22-backlight low"
         self.backlight_high = "~/pitft22-backlight high"
@@ -105,7 +114,7 @@ class ImageShow():
         status_change = 0
    
         # backlight control logic
-        if player_status['current_transport_state'] == 'STOPPED':
+        if player_status['current_transport_state'] in ('STOPPED', 'PAUSED_PLAYBACK'):
             # backlight goes low, then off after a timeout
             if self.backlight_state == "high":
                 self.set_backlight("low")
@@ -159,27 +168,41 @@ class ImageShow():
             d.text((self.img_width / 2, self.img_height * 0.45), txt, font=fnt,
                 fill=(255,255,255,255), anchor="mm")
 
+            fnt2_size = 26
+            if self.smallscreen:
+                fnt2_size = 20
 
-            fnt2 = ImageFont.truetype("Pillow/Tests/fonts/FreeSansBold.ttf", 24)
+            fnt2 = ImageFont.truetype("Pillow/Tests/fonts/FreeSansBold.ttf", fnt2_size)
 
             # draw the device name and status (if playing) at the bottom
             # increase polling delay when player is idle,
             player_status = self.sonos.get_current_transport_info()
             player_text = self.sonos.player_name
             fnt2_color = (255, 192, 128, 255)
-            if player_status['current_transport_state'] == 'STOPPED':
+            if player_status['current_transport_state'] in ('STOPPED','PAUSED_PLAYBACK'):
                 self.delay = self.delay_idle
                 
             else:
                 self.delay = self.delay_active
+
                 # only append player status if active
-                player_text = "%s: %s" % (self.sonos.player_name, self.sonos.music_source)
+                source_text = self.sonos.music_source
+                if source_text == 'UNKNOWN':
+                    track = self.sonos.get_current_track_info()
+                    source_text = track['artist']
+
+                # cap source length on small screens
+                if self.smallscreen and (len(source_text) > 16):
+                    source_text = source_text[:16] + "..."
+
+                player_text = "%s: %s" % (self.sonos.player_name, source_text)
                 fnt2_color = (128, 255, 128, 255)
 
 
             d.text((self.img_width / 2, self.img_height * 0.94), player_text,
                 font=fnt2, fill=fnt2_color, anchor="ms")
             syslog.syslog("Display: Volume %s Player %s" % (txt, player_text))
+            syslog.syslog("Polling every %d msec" % self.delay)
 
             # render the image via Tk
             self.image = ImageTk.PhotoImage(img)
