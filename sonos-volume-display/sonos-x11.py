@@ -7,7 +7,7 @@
 # Sonos display in X11 naked window of a fixed dimension
 # Designed to run full screen on a raspberry pi or similar device
 #
-# matt@corddry.com | 2021-05
+# (c) Matt Corddry, May 2021
 #
 # TODO LIST:
 # - convert to using Sonos events rather than polling
